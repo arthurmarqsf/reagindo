@@ -1,4 +1,4 @@
-const C = 'reagindo-v10';
+const C = 'reagindo-v11';
 const SONS = ['risada', 'plateia', 'aplausos', 'buzina', 'rufar', 'triste', 'grilo', 'explosao', 'campainha'].map((s) => 'sons/' + s + '.m4a');
 const ASSETS = ['./', 'index.html', 'style.css', 'fixmp4.js', 'app.js', 'editor.js', 'prompter.js', 'extras.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', ...SONS];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(C).then((c) => c.addAll(ASSETS))); self.skipWaiting(); });

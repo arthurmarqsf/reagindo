@@ -303,16 +303,34 @@ function canvasSize() {
   const b = S.res === '4k' ? 2160 : S.res === '1080' ? 1080 : 720, l = Math.round(b * 16 / 9 / 2) * 2;
   return S.layout === 'pip169' ? [l, b] : S.layout === 'pip11' ? [b, b] : [b, l];
 }
+/* Encaixa o quadro em qualquer tela:
+   - "wide"  (tablet/celular deitado, computador): vídeo à esquerda, controles numa coluna à direita
+   - "mid"   (tablet em pé, celular mais "baixo"): vídeo entre a barra de cima e os controles, sem nada por cima
+   - normal  (celular em pé): igual app de câmera, controles por cima da parte de baixo */
 function sizeFrame() {
   const [W, H] = canvasSize();
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-  const vw = innerWidth, vh = innerHeight, sc = Math.min(vw / W, vh / H), w = W * sc, h = H * sc;
-  box.style.width = w + 'px'; box.style.height = h + 'px';
-  box.style.top = (S.layout === 'pip169' || S.layout === 'pip11' ? Math.max(0, (vh - h) / 2 - 90) : 0) + 'px';
-  $('.dl').style.bottom = '';
+  const vw = innerWidth, vh = innerHeight, a = vw / vh, body = document.body;
+  const wide = a >= 1 && vw >= 560, mid = !wide && a > 0.6;
+  body.classList.toggle('wide', wide); body.classList.toggle('mid', mid);
+  const panel = wide ? (vw < 900 ? 320 : 380) : 0; document.documentElement.style.setProperty('--panel', panel + 'px');
+  let aw = vw, ah = vh, top = 0, cx = vw / 2;
+  if (wide) { aw = vw - panel - 24; ah = vh - 24; cx = (vw - panel) / 2; }
+  else if (mid) { const tb = $('.top').getBoundingClientRect().bottom + 8, bh = $('.bottom').offsetHeight + 6; aw = vw - 24; ah = Math.max(160, vh - tb - bh); top = tb; }
+  const sc = Math.min(aw / W, ah / H), w = W * sc, h = H * sc;
+  box.style.width = w + 'px'; box.style.height = h + 'px'; box.style.left = cx + 'px';
+  if (wide) top = (vh - h) / 2;
+  else if (mid) top += (ah - h) / 2;
+  else top = S.layout === 'pip169' || S.layout === 'pip11' ? Math.max(0, (vh - h) / 2 - 90) : 0;
+  box.style.top = top + 'px';
+  box.style.borderRadius = wide || mid ? '14px' : '0';
+  box.style.setProperty('--pf', Math.max(11, Math.min(19, w * 0.046)) + 'px'); // botões sobre o vídeo acompanham o tamanho dele
 }
 addEventListener('resize', sizeFrame);
 addEventListener('orientationchange', () => setTimeout(sizeFrame, 300));
+if (window.visualViewport) visualViewport.addEventListener('resize', sizeFrame);
+// os controles de baixo mudam de altura (sons, emojis, fila…): reencaixa o vídeo
+if (window.ResizeObserver) new ResizeObserver(() => { if (document.body.classList.contains('mid')) sizeFrame(); }).observe($('.bottom'));
 
 function layout(W, H) {
   if (S.layout === 'split') {
