@@ -10,7 +10,8 @@ const DEF = {
   layout: 'split', split: 0.42, camTop: true, camSize: 0.38, camShape: 'circle', camX: 0.76, camY: 0.2,
   mirror: true, facing: 'user', fill: false, vol: 1, duck: true, badge: true, autoClear: true,
   zoom: 1, offX: 0, offY: 0, camZoom: 1, camOffX: 0, camOffY: 0, ytVertical: false, sfxVol: 0.8, tbCollapsed: false,
-  countdown: true, wmOn: true, wmText: '', drawClear: true, penColor: '#ffd60a', penTool: 'arrow',
+  countdown: true, wmOn: true, wmText: '', res: '720', camBg: 'normal', bgColor: '#00b140', light: 0, smooth: 0, bw: false, captions: false,
+  tickerOn: false, tickerTag: 'LANCE', tickerText: '', endQ: 'Foi pênalti? Comenta aí!', autoNext: true, drawClear: true, penColor: '#ffd60a', penTool: 'arrow',
 };
 const S = Object.assign({}, DEF, load());
 const R = { source: null, paused: true, bubble: '', moments: [], recording: false, particles: [], talking: 0,
@@ -161,7 +162,6 @@ $$('[data-layout]').forEach((b) => b.addEventListener('click', () => {
 }));
 $$('#shapeSeg button').forEach((b) => b.addEventListener('click', () => { S.camShape = b.dataset.shape; save(); applyUI(); }));
 $('#resetVideo').addEventListener('click', () => { S.zoom = 1; S.offX = 0; S.offY = 0; save(); applyUI(); });
-$('#mirrorBtn').addEventListener('click', () => { S.mirror = !S.mirror; save(); applyUI(); toast(S.mirror ? 'Câmera espelhada' : 'Câmera normal'); });
 $('#tbFlip').addEventListener('click', async () => {
   S.facing = S.facing === 'user' ? 'environment' : 'user'; S.mirror = S.facing === 'user'; save(); applyUI();
   try { await getCam(); } catch { toast('Não deu pra trocar a câmera'); }
@@ -172,7 +172,7 @@ function applyUI() {
   if (document.activeElement !== $('#wmText')) $('#wmText').value = S.wmText || '';
   $$('[data-layout]').forEach((b) => b.classList.toggle('on', b.dataset.layout === S.layout));
   $$('#shapeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.shape === S.camShape));
-  $('#mirrorBtn').classList.toggle('on', !S.mirror);
+  if (window.syncExtras) syncExtras();
   $('.tbrow').classList.toggle('collapsed', S.tbCollapsed);
   $('#playbar').classList.toggle('hidden', !R.source);
   $('#addMedia').classList.toggle('hidden', !!R.source);
@@ -187,7 +187,7 @@ let ac = null, recDest = null, vidGain = null, sfxGain = null, analyser = null, 
 async function getCam() {
   if (camStream) camStream.getTracks().forEach((t) => t.stop());
   const s = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: S.facing, width: { ideal: 1280 }, height: { ideal: 720 } },
+    video: { facingMode: S.facing, width: { ideal: S.res === '4k' ? 3840 : S.res === '1080' ? 1920 : 1280 }, height: { ideal: S.res === '4k' ? 2160 : S.res === '1080' ? 1080 : 720 } },
     audio: micStream ? false : { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
   });
   camStream = new MediaStream(s.getVideoTracks()); cam.srcObject = camStream; cam.play().catch(() => {});
@@ -244,7 +244,7 @@ function soundBtn(key, icon, label, url, custom) {
   return b;
 }
 // sons do próprio usuário: ficam salvos no aparelho (IndexedDB)
-function dbOpen() { return new Promise((res, rej) => { const r = indexedDB.open('reagindo', 1); r.onupgradeneeded = () => r.result.createObjectStore('sons', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+function dbOpen() { return new Promise((res, rej) => { const r = indexedDB.open('reagindo', 2); r.onupgradeneeded = () => { const db = r.result; if (!db.objectStoreNames.contains('sons')) db.createObjectStore('sons', { keyPath: 'id' }); if (!db.objectStoreNames.contains('gravacoes')) db.createObjectStore('gravacoes', { keyPath: 'id' }); }; r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
 async function dbAll() { try { const db = await dbOpen(); return await new Promise((res) => { const q = db.transaction('sons').objectStore('sons').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }); } catch { return []; } }
 async function dbTx(fn) { const db = await dbOpen(); return new Promise((res, rej) => { const t = db.transaction('sons', 'readwrite'); fn(t.objectStore('sons')); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
 async function renderSounds() {
@@ -299,13 +299,16 @@ function burst(e) {
 }
 
 /* ================= geometria ================= */
-function canvasSize() { return S.layout === 'pip169' ? [1280, 720] : [720, 1280]; }
+function canvasSize() {
+  const b = S.res === '4k' ? 2160 : S.res === '1080' ? 1080 : 720, l = Math.round(b * 16 / 9 / 2) * 2;
+  return S.layout === 'pip169' ? [l, b] : S.layout === 'pip11' ? [b, b] : [b, l];
+}
 function sizeFrame() {
   const [W, H] = canvasSize();
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const vw = innerWidth, vh = innerHeight, sc = Math.min(vw / W, vh / H), w = W * sc, h = H * sc;
   box.style.width = w + 'px'; box.style.height = h + 'px';
-  box.style.top = (S.layout === 'pip169' ? Math.max(0, (vh - h) / 2 - 90) : 0) + 'px';
+  box.style.top = (S.layout === 'pip169' || S.layout === 'pip11' ? Math.max(0, (vh - h) / 2 - 90) : 0) + 'px';
   $('.dl').style.bottom = '';
 }
 addEventListener('resize', sizeFrame);
@@ -316,7 +319,8 @@ function layout(W, H) {
     const a = S.camTop ? S.split : 1 - S.split, top = { x: 0, y: 0, w: W, h: H * a }, bot = { x: 0, y: H * a, w: W, h: H * (1 - a) };
     return S.camTop ? { cam: top, video: bot, shape: 'full', line: H * a } : { video: top, cam: bot, shape: 'full', line: H * a };
   }
-  const s = S.camSize * Math.min(W, H) * (S.layout === 'pip169' ? 1 : 1.15) * (1 + (punchK() - 1) * 0.6), w = s, h = S.camShape === 'circle' ? s : s * 1.25;
+  const s = S.camSize * Math.min(W, H) * (S.layout === 'split' || S.layout === 'pip916' ? 1.15 : 1) * (1 + (punchK() - 1) * 0.6), w = s,
+    h = S.camShape === 'circle' || S.camShape === 'square' ? s : S.camShape === 'free' ? s * 1.3 : s * 1.25;
   const x = Math.max(0, Math.min(W - w, S.camX * W - w / 2)), y = Math.max(0, Math.min(H - h, S.camY * H - h / 2));
   return { video: { x: 0, y: 0, w: W, h: H }, cam: { x, y, w, h }, shape: S.camShape };
 }
@@ -351,7 +355,7 @@ function placeOverlays(L) {
   if (L.line != null) { const sp = $('#splitPill').style; sp.left = '50%'; sp.top = pct(L.line, H); }
   const ch = $('#camHit').style;
   if (L.shape === 'full') ch.display = 'none';
-  else { ch.display = 'block'; ch.left = pct(L.cam.x, W); ch.top = pct(L.cam.y, H); ch.width = pct(L.cam.w, W); ch.height = pct(L.cam.h, H); ch.borderRadius = L.shape === 'circle' ? '50%' : '10%'; }
+  else { ch.display = 'block'; ch.left = pct(L.cam.x, W); ch.top = pct(L.cam.y, H); ch.width = pct(L.cam.w, W); ch.height = pct(L.cam.h, H); ch.borderRadius = L.shape === 'circle' ? '50%' : L.shape === 'free' ? '0' : '10%'; }
 }
 
 /* ================= desenho ================= */
@@ -363,17 +367,18 @@ function drawImg(el, r, c, mirror) {
 }
 function coverRect(r, aspect) { const sc = Math.max(r.w / aspect, r.h); const w = aspect * sc, h = sc; return { x: r.x + (r.w - w) / 2, y: r.y + (r.h - h) / 2, w, h }; }
 function drawCam(L) {
-  const r = L.cam, ok = cam.readyState >= 2 && cam.videoWidth;
+  const r = L.cam, ok = cam.readyState >= 2 && cam.videoWidth, src = window.camSource ? camSource() : cam;
+  const clear = window.camTransparent && camTransparent();
   ctx.save();
   if (L.shape === 'circle') { ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, 0, Math.PI * 2); ctx.clip(); }
-  else if (L.shape === 'rect') { rrect(r.x, r.y, r.w, r.h, r.w * 0.1); ctx.clip(); }
-  ctx.fillStyle = '#222'; ctx.fillRect(r.x, r.y, r.w, r.h);
-  if (ok) drawImg(cam, r, camRect(r, cam.videoWidth / cam.videoHeight), S.mirror);
+  else if (L.shape === 'rect' || L.shape === 'square') { rrect(r.x, r.y, r.w, r.h, r.w * (L.shape === 'square' ? 0.06 : 0.1)); ctx.clip(); }
+  if (!clear) { ctx.fillStyle = '#222'; ctx.fillRect(r.x, r.y, r.w, r.h); }
+  if (ok) drawImg(src, r, camRect(r, cam.videoWidth / cam.videoHeight), S.mirror);
   else { ctx.fillStyle = '#777'; ctx.font = `600 ${Math.round(r.w * 0.06)}px -apple-system,sans-serif`; ctx.textAlign = 'center'; ctx.fillText('câmera desligada', r.x + r.w / 2, r.y + r.h / 2); }
   ctx.restore();
-  if (L.shape !== 'full') {
+  if (L.shape !== 'full' && L.shape !== 'free') {
     ctx.save(); ctx.lineWidth = Math.max(5, r.w * 0.025) + R.talking * r.w * 0.03; ctx.strokeStyle = R.talking > 0.2 ? '#ff3b30' : '#fff';
-    if (L.shape === 'circle') { ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, 0, Math.PI * 2); } else rrect(r.x, r.y, r.w, r.h, r.w * 0.1);
+    if (L.shape === 'circle') { ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, 0, Math.PI * 2); } else rrect(r.x, r.y, r.w, r.h, r.w * (L.shape === 'square' ? 0.06 : 0.1));
     ctx.stroke(); ctx.restore();
   }
 }
@@ -437,6 +442,7 @@ function frame() {
   drawStrokes();
   if (R.replayEnd != null) drawReplayTag(v);
   if (R.bubble) drawBubble(v);
+  if (window.extrasDraw) extrasDraw(L);
   drawParticles();
   drawWatermark();
   drawPunchFlash(L);
@@ -446,7 +452,9 @@ function frame() {
   if (!seeking) { seekBar.value = d ? (t / d) * 1000 : 0; $('#tCur').textContent = fmt(t); }
   $('#tDur').textContent = fmt(d);
   const q = $('#qualityPill');
-  q.textContent = R.recording ? '● REC ' + fmt((performance.now() - R.recStart) / 1000) : (isYT() ? 'YouTube ' : '720p·30 ') + (S.layout === 'pip169' ? '16:9' : '9:16');
+  const resL = S.res === '4k' ? '4K' : S.res + 'p', asp = S.layout === 'pip169' ? '16:9' : S.layout === 'pip11' ? '1:1' : '9:16';
+  q.textContent = R.recording ? (rec && rec.state === 'paused' ? '⏸ ' : '● REC ') + fmt(window.recElapsed ? recElapsed() : (performance.now() - R.recStart) / 1000) : (isYT() ? 'YouTube ' + asp : resL + '·30 ' + asp);
+  document.body.classList.toggle('recording', R.recording);
   q.classList.toggle('rec', R.recording);
 }
 
@@ -670,8 +678,9 @@ function startRec() {
   const stream = new MediaStream([...vs.getVideoTracks(), ...recDest.stream.getAudioTracks()]);
   recMime = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
     .find((m) => MediaRecorder.isTypeSupported(m)) || '';
-  try { rec = new MediaRecorder(stream, recMime ? { mimeType: recMime, videoBitsPerSecond: 6000000 } : {}); }
+  try { rec = new MediaRecorder(stream, recMime ? { mimeType: recMime, videoBitsPerSecond: S.res === '4k' ? 40000000 : S.res === '1080' ? 12000000 : 6000000 } : {}); }
   catch (e) { return toast('Erro ao gravar: ' + e.message); }
+  if (window.onRecStart) onRecStart();
   chunks = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); }; rec.onstop = finishRec; rec.start(1000);
   R.recording = true; R.recStart = performance.now(); $('#recBtn').classList.add('on');
   toast(R.source ? 'Gravando! Dê play e reaja 🎙️' : 'Gravando sua câmera');
@@ -683,6 +692,7 @@ function finishRec() {
   lastBlob = new Blob(chunks, { type }); const url = URL.createObjectURL(lastBlob), ext = type.includes('mp4') ? 'mp4' : 'webm';
   $('#resultVid').src = url; $('#dlBtn').href = url; $('#dlBtn').download = 'react-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.' + ext;
   $('#lastBtn').classList.remove('hidden'); $('#result').classList.remove('hidden');
+  if (window.saveHistory) saveHistory(lastBlob, 'React ' + (R.source && R.source.name ? '· ' + R.source.name.replace(/\.[^.]+$/, '').slice(0, 24) : ''));
 }
 $('#lastBtn').addEventListener('click', () => $('#result').classList.remove('hidden'));
 $('#saveBtn').addEventListener('click', async () => {

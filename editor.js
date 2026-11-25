@@ -185,12 +185,12 @@ async function exportEdit() {
   edVid.play().then(() => edVid.pause()).catch(() => {}); // destrava no toque (iPhone)
   E.busy = true; edVid.pause(); stopMusic();
   const ov = $('#edProgress'), bar = $('#edProgBar'); ov.classList.remove('hidden');
-  let W = edVid.videoWidth, H = edVid.videoHeight; const k = Math.min(1, 1280 / Math.max(W, H)); W = Math.round(W * k / 2) * 2; H = Math.round(H * k / 2) * 2;
+  let W = edVid.videoWidth, H = edVid.videoHeight; const k = Math.min(1, (S.res === '4k' ? 3840 : S.res === '1080' ? 1920 : 1280) / Math.max(W, H)); W = Math.round(W * k / 2) * 2; H = Math.round(H * k / 2) * 2;
   const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
   const dest = ac.createMediaStreamDestination(); edGain.connect(dest); musicGain.connect(dest);
   const stream = new MediaStream([...c.captureStream(30).getVideoTracks(), ...dest.stream.getAudioTracks()]);
   const mime = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m)) || '';
-  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6000000 } : {}); const chunks = [];
+  const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: S.res === '4k' ? 40000000 : S.res === '1080' ? 12000000 : 6000000 } : {}); const chunks = [];
   rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
   const total = keepLen(); let done = 0;
   const prog = (x) => { bar.style.width = Math.min(100, x / total * 100) + '%'; $('#edProgTxt').textContent = `Exportando… ${Math.round(Math.min(100, x / total * 100))}%`; };
@@ -215,7 +215,7 @@ async function exportEdit() {
     const url = URL.createObjectURL(lastBlob), ext = type.includes('mp4') ? 'mp4' : 'webm';
     $('#resultVid').src = url; $('#dlBtn').href = url; $('#dlBtn').download = 'react-editado-' + Date.now() + '.' + ext;
     $('#editor').classList.add('hidden'); $('#result').classList.remove('hidden'); $('#lastBtn').classList.remove('hidden');
-    toast('Vídeo editado pronto ✅');
+    toast('Vídeo editado pronto ✅'); if (window.saveHistory) saveHistory(lastBlob, 'Editado' + (E.title ? ' · ' + E.title.slice(0, 24) : ''));
   } catch (e) { console.warn(e); toast('Erro ao exportar: ' + e.message, 4000); try { rec.state !== 'inactive' && rec.stop(); } catch {} }
   finally { stopMusic(); try { edGain.disconnect(dest); musicGain.disconnect(dest); } catch {} ov.classList.add('hidden'); E.busy = false; }
 }

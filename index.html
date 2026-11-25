@@ -56,7 +56,7 @@
     <button id="mediaBtn" class="round" aria-label="Mídia"><svg><use href="#i-film"/></svg></button>
     <div id="qualityPill" class="qpill">720p·30 SDR</div>
     <button id="adjBtn" class="round" aria-label="Ajustar zoom e posição"><svg><use href="#i-move"/></svg></button>
-    <button id="mirrorBtn" class="round" aria-label="Espelhar"><svg><use href="#i-mirror"/></svg></button>
+    <button id="ccBtn" class="round cc" aria-label="Legenda ao vivo">CC</button>
     <button id="settingsBtn" class="round" aria-label="Ajustes"><svg><use href="#i-sliders"/></svg></button>
   </div>
 
@@ -65,6 +65,7 @@
     <div class="playbar hidden" id="playbar">
       <button id="playBtn" class="pb-play"><svg><use href="#i-play"/></svg></button>
       <button id="replayBtn" class="pb-replay" aria-label="Replay lento">⟲<b>½</b></button>
+      <button id="qPrev" class="pb-q hidden" aria-label="Vídeo anterior">⏮</button><span id="qInfo" class="pb-qi hidden"></span><button id="qNext" class="pb-q hidden" aria-label="Próximo vídeo">⏭</button>
       <span id="tCur">0:00</span>
       <input id="seekBar" type="range" min="0" max="1000" value="0">
       <span id="tDur">0:00</span>
@@ -74,11 +75,13 @@
     <input id="sndFile" type="file" accept="audio/*,video/*" multiple hidden>
     <div class="emojis hidden" id="emojiBar">
       <button data-e="😂">😂</button><button data-e="😱">😱</button><button data-e="🔥">🔥</button><button data-e="👀">👀</button><button data-e="❤️">❤️</button><button data-e="💀">💀</button><button data-e="🤯">🤯</button><button data-e="👏">👏</button>
+      <button id="tickerBtn" class="txt tk" aria-label="Faixa de texto">📰</button><button id="endBtn" class="txt tk" aria-label="Tela final">🏁</button>
       <button id="balloonBtn" class="txt">Aa</button>
     </div>
 
     <button id="lastBtn" class="round dl hidden" aria-label="Última gravação"><svg><use href="#i-down"/></svg></button>
     <button id="punchBtn" class="round punch" aria-label="Zoom dramático"><svg><use href="#i-zoom"/></svg></button>
+    <button id="pauseRec" class="round pauserec" aria-label="Pausar gravação">⏸</button>
 
     <div class="tbrow">
       <button id="tbToggle" class="chev" aria-label="Recolher"><svg><use href="#i-chev"/></svg></button>
@@ -114,8 +117,10 @@
 <div id="mediaSheet" class="sheet">
   <div class="grab"></div>
   <h3>Adicionar mídia</h3>
-  <label class="sbtn primary" for="file"><svg><use href="#i-gallery"/></svg>Vídeo do celular</label>
+  <label class="sbtn primary" for="fileMulti"><svg><use href="#i-gallery"/></svg>Vídeo do celular <small>(pode escolher vários = fila)</small></label>
+  <input id="fileMulti" type="file" accept="video/*" multiple hidden>
   <input id="file" type="file" accept="video/*" hidden>
+  <button id="histBtn" class="sbtn">🕘 Minhas gravações</button>
   <div class="sep">ou link do YouTube</div>
   <div class="row">
     <input id="ytUrl" type="url" inputmode="url" placeholder="Cole o link do YouTube" autocomplete="off">
@@ -132,13 +137,16 @@
 <div id="settingsSheet" class="sheet">
   <div class="grab"></div>
   <h3>Ajustes</h3>
+  <div class="set"><span>Qualidade</span>
+    <div class="seg" id="resSeg"><button data-res="720">720p</button><button data-res="1080">1080p</button><button data-res="4k">4K</button></div>
+  </div>
   <div class="set"><span>Formato</span>
-    <div class="seg" id="layoutSeg"><button data-layout="split">Dividida</button><button data-layout="pip916">Canto 9:16</button><button data-layout="pip169">Canto 16:9</button></div>
+    <div class="seg" id="layoutSeg"><button data-layout="split">Dividida</button><button data-layout="pip916">Canto 9:16</button><button data-layout="pip169">16:9</button><button data-layout="pip11">Quadrado</button></div>
   </div>
   <label class="set tog"><span>Eu em cima (tela dividida)</span><input id="camTop" type="checkbox"></label>
   <div class="set"><span>Tamanho da câmera (canto)</span><input id="camSize" type="range" min="0.18" max="0.7" step="0.01"></div>
   <div class="set"><span>Câmera no canto</span>
-    <div class="seg" id="shapeSeg"><button data-shape="circle">Círculo</button><button data-shape="rect">Retângulo</button></div>
+    <div class="seg" id="shapeSeg"><button data-shape="circle">Círculo</button><button data-shape="square">Quadrada</button><button data-shape="rect">Retâng.</button><button data-shape="free">Livre</button></div>
   </div>
   <div class="set"><span>Zoom do vídeo</span><input id="zoom" type="range" min="0.5" max="5" step="0.01"></div>
   <div class="set"><span>Mover vídeo ↔</span><input id="offX" type="range" min="-1.5" max="1.5" step="0.01"></div>
@@ -155,6 +163,26 @@
   <label class="set tog"><span>Contagem 3-2-1 ao gravar</span><input id="countdown" type="checkbox"></label>
   <label class="set tog"><span>Mostrar minha marca (@)</span><input id="wmOn" type="checkbox"></label>
   <input id="wmText" type="text" maxlength="30" placeholder="Seu @ (ex.: @seucanal)" autocomplete="off" autocapitalize="off">
+  <h4 class="sh">📷 Fundo da câmera</h4>
+  <div class="seg wrap" id="bgSeg"><button data-bg="normal">Normal</button><button data-bg="none">Sem fundo</button><button data-bg="blur">Desfocar</button><button data-bg="color">Cor</button><button data-bg="image">Foto</button></div>
+  <div class="set hidden" id="bgColorRow"><span>Cor do fundo</span><input id="bgColor" type="color" value="#00b140"></div>
+  <div class="hidden" id="bgPickRow"><button id="bgPick" class="sbtn">🖼️ Escolher foto de fundo</button></div>
+  <input id="bgFile" type="file" accept="image/*" hidden>
+  <p class="hint">“Sem fundo” recorta só você e põe por cima do vídeo (use câmera “Livre”). Pesa um pouco no iPhone.</p>
+  <h4 class="sh">✨ Luz e filtro</h4>
+  <div class="set"><span>Clarear rosto</span><input id="light" type="range" min="0" max="1" step="0.05"></div>
+  <div class="set"><span>Suavizar pele</span><input id="smooth" type="range" min="0" max="1" step="0.05"></div>
+  <label class="set tog"><span>Preto e branco</span><input id="bw" type="checkbox"></label>
+  <label class="set tog"><span>Espelhar minha câmera</span><input id="mirrorT" type="checkbox"></label>
+  <h4 class="sh">📰 Faixa estilo TV</h4>
+  <label class="set tog"><span>Mostrar faixa</span><input id="tickerOn" type="checkbox"></label>
+  <div class="row"><input id="tickerTag" type="text" maxlength="12" placeholder="LANCE" style="flex:0 0 32%"><input id="tickerText" type="text" maxlength="90" placeholder="GOL DO FLA AOS 90+3'"></div>
+  <h4 class="sh">🏁 Tela final</h4>
+  <input id="endQ" type="text" maxlength="60" placeholder="Foi pênalti? Comenta aí!">
+  <button id="endNow" class="sbtn">Mostrar tela final agora (6 s)</button>
+  <h4 class="sh">🎞️ Fila de vídeos</h4>
+  <label class="set tog"><span>Passar pro próximo sozinho</span><input id="autoNext" type="checkbox"></label>
+  <h4 class="sh">Mais</h4>
   <button id="openMoments" class="sbtn">📍 Momentos que você pausou</button>
   <details class="help"><summary>Instalar no iPhone</summary>
     Abra no <b>Safari</b> → <b>Compartilhar</b> → <b>Adicionar à Tela de Início</b>. Use fone de ouvido pro som do vídeo não vazar no microfone.
@@ -170,6 +198,14 @@
     <button id="commentShow" class="sbtn primary">Mostrar</button>
     <button id="commentClear" class="sbtn">Tirar balão</button>
   </div>
+</div>
+
+<!-- Histórico -->
+<div id="histSheet" class="sheet">
+  <div class="grab"></div>
+  <h3>Minhas gravações</h3>
+  <p class="hint">Tudo que você grava fica salvo aqui dentro do app, mesmo se fechar. <span id="histUse"></span></p>
+  <div id="histList"></div>
 </div>
 
 <!-- Teleprompter -->
@@ -221,6 +257,7 @@
     <p class="hint" style="text-align:center">Na tela que abrir, toque em <b>“Salvar Vídeo”</b>. Ele vai direto pro rolo da câmera.</p>
     <button id="editBtn" class="sbtn">✂️ Editar (cortar, capa, música)</button>
     <a id="dlBtn" class="sbtn" download>Baixar arquivo</a>
+    <button id="histBtn2" class="sbtn">🕘 Minhas gravações</button>
     <button id="closeResult" class="sbtn ghost">Fechar</button>
   </div>
 </div>
@@ -289,5 +326,6 @@
 <script src="app.js"></script>
 <script src="editor.js"></script>
 <script src="prompter.js"></script>
+<script src="extras.js"></script>
 </body>
 </html>
