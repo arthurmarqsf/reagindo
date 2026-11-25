@@ -300,16 +300,22 @@ function camRect(r, aspect) {
   const sc = Math.max(r.w / aspect, r.h) * S.camZoom, w = aspect * sc, h = sc;
   return { x: r.x + (r.w - w) / 2 + S.camOffX * r.w, y: r.y + (r.h - h) / 2 + S.camOffY * r.h, w, h };
 }
-const pct = (v, t) => (v / t * 100) + '%';
+const pct = (v, t) => (Math.round(v / t * 1e5) / 1e3) + '%';
 let ytKey = '';
 function placeOverlays(L) {
   const W = cv.width, H = cv.height, v = L.video;
   if (isYT()) {
-    const c = contentRect(v, S.ytVertical ? 9 / 16 : 16 / 9, S.fill), key = [v.x, v.y, v.w, v.h, c.x, c.y, c.w, c.h].join();
-    if (key !== ytKey) {
-      ytKey = key; const w = $('#ytWrap').style;
-      w.left = pct(v.x, W); w.top = pct(v.y, H); w.width = pct(v.w, W); w.height = pct(v.h, H);
-      const f = $('#yt'); if (f) { f.style.left = pct(c.x - v.x, v.w); f.style.top = pct(c.y - v.y, v.h); f.style.width = pct(c.w, v.w); f.style.height = pct(c.h, v.h); }
+    // iPhone: redimensionar o iframe não dá zoom no player do YouTube; então o iframe fica no
+    // tamanho "base" e o zoom/movimento é feito com transform (escala de verdade, por cima de tudo)
+    const asp = S.ytVertical ? 9 / 16 : 16 / 9, c = contentRect(v, asp, S.fill);
+    const z = S.zoom, bw = c.w / z, bh = c.h / z, bx = c.x + (c.w - bw) / 2, by = c.y + (c.h - bh) / 2;
+    const key = [v.x, v.y, v.w, v.h, bx, by, bw, bh].join();
+    const w = $('#ytWrap').style, f = $('#yt');
+    if (key !== ytKey) { ytKey = key; w.left = pct(v.x, W); w.top = pct(v.y, H); w.width = pct(v.w, W); w.height = pct(v.h, H); }
+    if (f) { // reaplica sempre: o player do YouTube às vezes reescreve o estilo do iframe
+      const want = { left: pct(bx - v.x, v.w), top: pct(by - v.y, v.h), width: pct(bw, v.w), height: pct(bh, v.h),
+        transform: `scale(${Math.round(z * 1000) / 1000})`, transformOrigin: 'center center' };
+      for (const k in want) if (f.style[k] !== want[k]) f.style[k] = want[k];
     }
   }
   const am = $('#addMedia').style; am.left = pct(v.x + v.w / 2, W); am.top = pct(v.y + v.h / 2, H);

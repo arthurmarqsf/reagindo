@@ -153,3 +153,4 @@ body.adjusting .bottom{display:none}
 .chev{width:34px}
 .dl{bottom:calc(var(--sb) + 30px)!important;left:28px}
 .emojis{scrollbar-width:none}.emojis::-webkit-scrollbar{display:none}
+#ytWrap{clip-path:inset(0);-webkit-clip-path:inset(0);isolation:isolate;transform:translateZ(0)}
