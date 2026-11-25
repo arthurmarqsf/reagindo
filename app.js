@@ -427,7 +427,7 @@ function drawBubble(v) {
 function drawParticles() {
   R.particles = R.particles.filter((p) => p.life > 0);
   for (const p of R.particles) {
-    p.x += p.vx; p.y += p.vy; p.vy *= 0.985; p.life -= 0.012;
+    const k = frameK; p.x += p.vx * k; p.y += p.vy * k; p.vy *= Math.pow(0.985, k); p.life -= 0.012 * k;
     ctx.save(); ctx.globalAlpha = Math.min(1, p.life * 2); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
     ctx.font = `${p.s}px "Apple Color Emoji","Segoe UI Emoji",sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.e, 0, 0); ctx.restore();
   }
@@ -445,14 +445,29 @@ function audioTick() {
   if (vidGain) vidGain.gain.setTargetAtTime(target, ac.currentTime, 0.08);
   if (isYT() && R.ytReady) { const v = Math.round(target * 100); if (v !== lastYTVol) { lastYTVol = v; try { R.yt.setVolume(v); } catch {} } }
 }
-function frame() {
+let lastDraw = 0, frameK = 1, vfN = 0;
+/* quadro do vídeo da galeria guardado no tamanho que aparece na tela.
+   Vídeo pesado (4K/60, HDR): se o aparelho apertar, atualiza em quadros alternados em vez de travar. */
+const vc = document.createElement('canvas'), vcx = vc.getContext('2d');
+function videoFrame(c) {
+  const skip = (window.perfLevel || 0) >= 1 && !R.paused ? 2 : 1;
+  const w = Math.max(2, Math.min(vid.videoWidth, Math.round(c.w))), h = Math.max(2, Math.round(w * vid.videoHeight / vid.videoWidth));
+  const resized = vc.width !== w || vc.height !== h;
+  if (resized) { vc.width = w; vc.height = h; }
+  if (resized || R.paused || seeking || (vfN++ % skip) === 0) vcx.drawImage(vid, 0, 0, w, h);
+  return vc;
+}
+function frame(now) {
   requestAnimationFrame(frame);
+  // desenha no máximo a 30 quadros/s: é a velocidade da gravação, e metade do trabalho (não trava com vídeo 4K/60)
+  now = now || performance.now(); if (now - lastDraw < 31) return;
+  frameK = lastDraw ? Math.min(3, (now - lastDraw) / 16.7) : 2; lastDraw = now;
   audioTick();
   const W = cv.width, H = cv.height, L = layout(W, H), v = L.video;
   if (isYT()) ctx.clearRect(0, 0, W, H);
   else {
     ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H);
-    if (R.source && vid.readyState >= 2 && vid.videoWidth) { ctx.fillStyle = '#000'; ctx.fillRect(v.x, v.y, v.w, v.h); drawImg(vid, v, contentRect(v, vid.videoWidth / vid.videoHeight, S.fill), false); }
+    if (R.source && vid.readyState >= 2 && vid.videoWidth) { ctx.fillStyle = '#000'; ctx.fillRect(v.x, v.y, v.w, v.h); const c = contentRect(v, vid.videoWidth / vid.videoHeight, S.fill); drawImg(videoFrame(c), v, c, false); }
   }
   drawCam(L);
   if (L.shape === 'full') { ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(0, L.line - 1, W, 2); }

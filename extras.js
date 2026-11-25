@@ -24,7 +24,7 @@ function loadSeg() {
   if (segMode || segLoading || segFail) return; segLoading = true;
   toast('Preparando o recorte de fundo… (só na 1ª vez demora)', 3500);
   try {
-    worker = new Worker('seg-worker.js');
+    worker = new Worker('seg-worker.js?v=16');
     const giveUp = setTimeout(() => { if (!segMode) { try { worker.terminate(); } catch {} worker = null; startMainSeg(); } }, 30000);
     worker.onmessage = (e) => {
       const m = e.data;
@@ -100,8 +100,13 @@ function blurPass(dst, dctx, src, radius, alpha = 1) {
   }
   dctx.globalAlpha = 1;
 }
+let lastBgT = 0;
 function blurredBg(W, H) {
   const bw = Math.max(16, Math.round(W / 4)), bh = Math.max(16, Math.round(H / 4)), R = Math.max(3, bw * 0.03);
+  // fundo borrado muda devagar: reaproveita o pronto e só recalcula algumas vezes por segundo
+  const now = performance.now();
+  if (bgCv.width === bw && bgCv.height === bh && now - lastBgT < [110, 220, 400][qLevel]) return bgCv;
+  lastBgT = now;
   if (bgCv.width !== bw || bgCv.height !== bh) { bgCv.width = bw; bgCv.height = bh; bgOnly.width = bw; bgOnly.height = bh; }
   bgx.imageSmoothingEnabled = bo.imageSmoothingEnabled = true; bgx.imageSmoothingQuality = bo.imageSmoothingQuality = 'high';
   // 1) só o fundo: câmera menos você (máscara um pouco maior pra não sobrar borda sua)
@@ -156,15 +161,21 @@ window.camTransparent = () => S.camBg === 'none' && maskReady;
 
 /* governador: se a tela começar a pesar, baixa a qualidade do recorte sozinho (e sobe de novo quando aliviar) */
 (function governor() {
-  let last = performance.now(), ema = 16, hi = 0, lo = 0, warned = false;
+  let last = performance.now(), ema = 16, hi = 0, lo = 0, warned = false; const vq = { t: 0, tot: 0, drop: 0, rate: 0 };
   (function tick(now) {
     requestAnimationFrame(tick);
     const dt = Math.min(200, now - last); last = now; ema = ema * 0.9 + dt * 0.1;
-    const active = S.camBg !== 'normal' || S.light > 0 || S.smooth > 0;
+    // também vigia o vídeo da galeria: se ele estiver perdendo quadros, é sinal de aparelho apertado
+    if (vid.getVideoPlaybackQuality && !vid.paused && R.source && !isYT() && now - vq.t > 1000) {
+      const q = vid.getVideoPlaybackQuality(), dec = q.totalVideoFrames - vq.tot, drop = q.droppedVideoFrames - vq.drop;
+      vq.rate = dec > 5 ? drop / dec : 0; vq.t = now; vq.tot = q.totalVideoFrames; vq.drop = q.droppedVideoFrames;
+    } else if (vid.paused) vq.rate = 0;
+    const active = S.camBg !== 'normal' || S.light > 0 || S.smooth > 0 || (R.source && !R.paused && !isYT());
     if (!active || document.hidden) { hi = lo = 0; return; }
-    if (ema > 40) { hi += dt; lo = 0; } else if (ema < 22) { lo += dt; hi = 0; } else { hi = lo = 0; }
-    if (hi > 1500 && qLevel < QL.length - 1) { qLevel++; hi = 0; if (!warned) { warned = true; toast('Ajustei o recorte pra não travar ⚡'); } }
+    if (ema > 40 || vq.rate > 0.15) { hi += dt; lo = 0; } else if (ema < 22 && vq.rate < 0.03) { lo += dt; hi = 0; } else { hi = lo = 0; }
+    if (hi > 1500 && qLevel < QL.length - 1) { qLevel++; hi = 0; if (!warned) { warned = true; toast('Ajustei a qualidade pra não travar ⚡'); } }
     if (lo > 6000 && qLevel > (segMode === 'main' ? 1 : 0)) { qLevel--; lo = 0; }
+    window.perfLevel = qLevel;
   })(last);
 })();
 window.segStats = () => ({ segMode, qLevel, segCost: Math.round(segCost), maskReady, FILTER_OK });
