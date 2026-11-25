@@ -385,7 +385,7 @@ function drawImg(el, r, c, mirror) {
 }
 function coverRect(r, aspect) { const sc = Math.max(r.w / aspect, r.h); const w = aspect * sc, h = sc; return { x: r.x + (r.w - w) / 2, y: r.y + (r.h - h) / 2, w, h }; }
 function drawCam(L) {
-  const r = L.cam, ok = cam.readyState >= 2 && cam.videoWidth, src = window.camSource ? camSource() : cam;
+  const r = L.cam, ok = cam.readyState >= 2 && cam.videoWidth, src = window.camSource ? camSource(r) : cam;
   const clear = window.camTransparent && camTransparent();
   ctx.save();
   if (L.shape === 'circle') { ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, 0, Math.PI * 2); ctx.clip(); }
