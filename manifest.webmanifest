@@ -1,5 +1,7 @@
 {
+  "id": "./",
   "name": "Reagindo — React ao vivo",
+  "description": "Faça react de vídeos com sua câmera, sons, desenho e gravação.",
   "short_name": "Reagindo",
   "start_url": "./",
   "scope": "./",
@@ -10,6 +12,7 @@
   "lang": "pt-BR",
   "icons": [
     {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }
