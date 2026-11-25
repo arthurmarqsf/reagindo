@@ -250,16 +250,43 @@ async function dbTx(fn) { const db = await dbOpen(); return new Promise((res, re
 async function renderSounds() {
   const bar = $('#soundBar'); bar.innerHTML = '';
   SOUNDS.forEach(([k, i, l]) => bar.appendChild(soundBtn(k, i, l, 'sons/' + k + '.m4a')));
-  for (const c of await dbAll()) bar.appendChild(soundBtn(c.id, '🎵', c.name, URL.createObjectURL(c.blob), true));
-  const add = document.createElement('button'); add.className = 'snd add'; add.innerHTML = '<i>＋</i><span>Meu som</span>';
+  for (const c of (await dbAll()).sort((a, b) => a.id.localeCompare(b.id))) bar.appendChild(soundBtn(c.id, c.icon || '🎵', c.name, URL.createObjectURL(c.blob), true));
+  const add = document.createElement('button'); add.className = 'snd add'; add.innerHTML = '<i>＋</i><span>Meus sons</span>';
   add.addEventListener('click', () => $('#sndFile').click()); bar.appendChild(add);
+  const mic = document.createElement('button'); mic.className = 'snd add'; mic.id = 'sndRec'; mic.innerHTML = '<i>🎙️</i><span>Gravar som</span>';
+  mic.addEventListener('click', toggleSndRec); bar.appendChild(mic);
 }
+// adiciona vários de uma vez (o nome do arquivo vira o nome do botão)
 $('#sndFile').addEventListener('change', async (e) => {
-  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  const name = (prompt('Nome do botão:', f.name.replace(/\.[^.]+$/, '').slice(0, 12)) || 'Som').slice(0, 12);
-  try { await dbTx((st) => st.put({ id: 'u' + Date.now(), name, blob: f })); await renderSounds(); toast('Som adicionado! Segure o botão pra apagar'); }
-  catch { toast('Não consegui salvar o som'); }
+  const files = [...e.target.files]; e.target.value = ''; if (!files.length) return;
+  let ok = 0;
+  for (const [i, f] of files.entries()) {
+    let name = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim().slice(0, 14) || 'Som';
+    if (files.length === 1) name = (prompt('Nome do botão:', name) || name).slice(0, 14);
+    try { await dbTx((st) => st.put({ id: 'u' + (Date.now() + i), name, blob: f })); ok++; } catch {}
+  }
+  await renderSounds(); toast(ok ? `${ok} som(ns) adicionado(s)! Segure o botão pra apagar` : 'Não consegui salvar');
 });
+// grava um som pelo microfone (ex.: o meme tocando em outro celular, ou você imitando)
+let sndRec = null, sndChunks = [], sndTimer = null;
+async function toggleSndRec() {
+  const btn = $('#sndRec');
+  if (sndRec && sndRec.state === 'recording') { sndRec.stop(); return; }
+  if (!micStream) return toast('Libere o microfone primeiro');
+  if (R.recording) return toast('Pare a gravação do vídeo antes');
+  const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find((m) => MediaRecorder.isTypeSupported(m)) || '';
+  sndRec = new MediaRecorder(micStream, mime ? { mimeType: mime } : {}); sndChunks = [];
+  sndRec.ondataavailable = (e) => { if (e.data.size) sndChunks.push(e.data); };
+  sndRec.onstop = async () => {
+    clearTimeout(sndTimer); btn.classList.remove('hit'); btn.querySelector('span').textContent = 'Gravar som';
+    const blob = new Blob(sndChunks, { type: sndRec.mimeType || mime || 'audio/mp4' }); if (blob.size < 2000) return toast('Muito curto');
+    const name = (prompt('Nome do botão:', 'Meme') || 'Meme').slice(0, 14);
+    try { await dbTx((st) => st.put({ id: 'u' + Date.now(), name, icon: '🗣️', blob })); await renderSounds(); toast('Som salvo!'); } catch { toast('Não consegui salvar'); }
+  };
+  sndRec.start(); btn.classList.add('hit'); btn.querySelector('span').textContent = 'Parar (10s)';
+  sndTimer = setTimeout(() => { if (sndRec.state === 'recording') sndRec.stop(); }, 10000);
+  toast('Gravando som… toque de novo pra parar');
+}
 async function removeCustom(id) { if (!confirm('Apagar esse som?')) return; await dbTx((st) => st.delete(id)); delete bufs[id]; renderSounds(); }
 renderSounds();
 
