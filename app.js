@@ -10,10 +10,11 @@ const DEF = {
   layout: 'split', split: 0.42, camTop: true, camSize: 0.38, camShape: 'circle', camX: 0.76, camY: 0.2,
   mirror: true, facing: 'user', fill: false, vol: 1, duck: true, badge: true, autoClear: true,
   zoom: 1, offX: 0, offY: 0, camZoom: 1, camOffX: 0, camOffY: 0, ytVertical: false, sfxVol: 0.8, tbCollapsed: false,
+  countdown: true, wmOn: true, wmText: '', drawClear: true, penColor: '#ffd60a', penTool: 'arrow',
 };
 const S = Object.assign({}, DEF, load());
 const R = { source: null, paused: true, bubble: '', moments: [], recording: false, particles: [], talking: 0,
-  yt: null, ytReady: false, recStart: 0 };
+  yt: null, ytReady: false, recStart: 0, strokes: [], punch: 0, replayEnd: null, unlocking: false };
 function load() { try { return JSON.parse(localStorage.getItem('reagindo2') || '{}'); } catch { return {}; } }
 function save() { try { localStorage.setItem('reagindo2', JSON.stringify(S)); } catch {} }
 const isYT = () => !!R.source && R.source.type === 'yt';
@@ -25,7 +26,6 @@ function closeSheets() { $$('.sheet').forEach((s) => s.classList.remove('open'))
 function openSheet(id) { const s = $(id), was = s.classList.contains('open'); closeSheets(); if (!was) { s.classList.add('open'); $('#scrim').classList.add('on'); } }
 $('#scrim').addEventListener('click', closeSheets);
 $('#mediaBtn').addEventListener('click', () => openSheet('#mediaSheet'));
-$('#tbMedia').addEventListener('click', () => openSheet('#mediaSheet'));
 $('#addMedia').addEventListener('click', () => openSheet('#mediaSheet'));
 $('#settingsBtn').addEventListener('click', () => openSheet('#settingsSheet'));
 $('#tbMoments').addEventListener('click', () => openSheet('#momentsSheet'));
@@ -104,8 +104,9 @@ function playMedia() {
 }
 function pauseMedia() { if (isYT()) { R.ytReady && R.yt.pauseVideo(); } else if (!vid.paused) vid.pause(); }
 function togglePlay() { R.paused ? playMedia() : pauseMedia(); }
-function onPlay() { setPaused(false); if (S.autoClear) R.bubble = ''; }
+function onPlay() { if (R.unlocking) return; setPaused(false); if (S.autoClear) R.bubble = ''; if (S.drawClear && !R.replayEnd) R.strokes = []; }
 function onPause() {
+  if (R.unlocking) return;
   const t = curTime(), d = duration();
   if (!R.paused && !(d && t >= d - 0.3)) { R.moments.push({ t, text: '' }); renderMoments(); }
   setPaused(true);
@@ -151,7 +152,7 @@ $('#copyMoments').addEventListener('click', async () => {
 
 /* ================= ajustes ================= */
 const RANGES = ['camSize', 'vol', 'zoom', 'offX', 'offY', 'sfxVol'];
-const TOGGLES = ['camTop', 'duck', 'badge', 'fill', 'autoClear', 'ytVertical'];
+const TOGGLES = ['camTop', 'duck', 'badge', 'fill', 'autoClear', 'ytVertical', 'countdown', 'wmOn', 'drawClear'];
 RANGES.forEach((k) => $('#' + k).addEventListener('input', (e) => { S[k] = +e.target.value; save(); }));
 TOGGLES.forEach((k) => $('#' + k).addEventListener('change', (e) => { S[k] = e.target.checked; save(); }));
 $$('[data-layout]').forEach((b) => b.addEventListener('click', () => {
@@ -168,6 +169,7 @@ $('#tbFlip').addEventListener('click', async () => {
 function applyUI() {
   RANGES.forEach((k) => { $('#' + k).value = S[k]; });
   TOGGLES.forEach((k) => { $('#' + k).checked = S[k]; });
+  if (document.activeElement !== $('#wmText')) $('#wmText').value = S.wmText || '';
   $$('[data-layout]').forEach((b) => b.classList.toggle('on', b.dataset.layout === S.layout));
   $$('#shapeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.shape === S.camShape));
   $('#mirrorBtn').classList.toggle('on', !S.mirror);
@@ -287,7 +289,7 @@ function layout(W, H) {
     const a = S.camTop ? S.split : 1 - S.split, top = { x: 0, y: 0, w: W, h: H * a }, bot = { x: 0, y: H * a, w: W, h: H * (1 - a) };
     return S.camTop ? { cam: top, video: bot, shape: 'full', line: H * a } : { video: top, cam: bot, shape: 'full', line: H * a };
   }
-  const s = S.camSize * Math.min(W, H) * (S.layout === 'pip169' ? 1 : 1.15), w = s, h = S.camShape === 'circle' ? s : s * 1.25;
+  const s = S.camSize * Math.min(W, H) * (S.layout === 'pip169' ? 1 : 1.15) * (1 + (punchK() - 1) * 0.6), w = s, h = S.camShape === 'circle' ? s : s * 1.25;
   const x = Math.max(0, Math.min(W - w, S.camX * W - w / 2)), y = Math.max(0, Math.min(H - h, S.camY * H - h / 2));
   return { video: { x: 0, y: 0, w: W, h: H }, cam: { x, y, w, h }, shape: S.camShape };
 }
@@ -297,7 +299,7 @@ function contentRect(r, aspect, fill) {
   return { x: r.x + (r.w - dw) / 2 + S.offX * r.w, y: r.y + (r.h - dh) / 2 + S.offY * r.h, w: dw, h: dh };
 }
 function camRect(r, aspect) {
-  const sc = Math.max(r.w / aspect, r.h) * S.camZoom, w = aspect * sc, h = sc;
+  const sc = Math.max(r.w / aspect, r.h) * S.camZoom * punchK(), w = aspect * sc, h = sc;
   return { x: r.x + (r.w - w) / 2 + S.camOffX * r.w, y: r.y + (r.h - h) / 2 + S.camOffY * r.h, w, h };
 }
 const pct = (v, t) => (Math.round(v / t * 1e5) / 1e3) + '%';
@@ -405,8 +407,13 @@ function frame() {
   drawCam(L);
   if (L.shape === 'full') { ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(0, L.line - 1, W, 2); }
   if (R.source && R.paused && S.badge && curTime() > 0.1) drawBadge(v);
+  drawStrokes();
+  if (R.replayEnd != null) drawReplayTag(v);
   if (R.bubble) drawBubble(v);
   drawParticles();
+  drawWatermark();
+  drawPunchFlash(L);
+  if (R.replayEnd != null && curTime() >= R.replayEnd) endReplay();
   placeOverlays(L);
   const d = duration(), t = curTime();
   if (!seeking) { seekBar.value = d ? (t / d) * 1000 : 0; $('#tCur').textContent = fmt(t); }
@@ -456,7 +463,7 @@ sp.addEventListener('click', () => {});
 const adj = $('#adjHit'), aptrs = new Map(); let ag = null, lastTapT = 0;
 function setAdjust(on) {
   document.body.classList.toggle('adjusting', on); $('#adjBtn').classList.toggle('on', on);
-  if (on) { closeSheets(); toast('Arraste pra mover · Pince pra dar zoom · 2 toques = resetar', 3200); } else save();
+  if (on) { if (document.body.classList.contains('drawing')) setDrawing(false); closeSheets(); toast('Arraste pra mover · Pince pra dar zoom · 2 toques = resetar', 3200); } else save();
 }
 $('#adjBtn').addEventListener('click', () => setAdjust(!document.body.classList.contains('adjusting')));
 $('#adjDone').addEventListener('click', () => setAdjust(false));
@@ -501,14 +508,132 @@ function adjUp(e) {
 }
 adj.addEventListener('pointerup', adjUp); adj.addEventListener('pointercancel', adjUp);
 
+/* ================= DESENHAR NA TELA ================= */
+const drawHit = $('#drawHit'); let curStroke = null;
+function setDrawing(on) {
+  document.body.classList.toggle('drawing', on); $('#tbDraw').classList.toggle('on', on);
+  if (on) { closeSheets(); setAdjust(false); if (!R.paused) pauseMedia(); }
+  syncDrawBar();
+}
+function syncDrawBar() {
+  $$('#drawBar [data-color]').forEach((b) => b.classList.toggle('on', b.dataset.color === S.penColor));
+  $$('#drawBar [data-tool]').forEach((b) => b.classList.toggle('on', b.dataset.tool === S.penTool));
+}
+$('#tbDraw').addEventListener('click', () => setDrawing(!document.body.classList.contains('drawing')));
+$('#drawDone').addEventListener('click', () => setDrawing(false));
+$('#drawUndo').addEventListener('click', () => R.strokes.pop());
+$('#drawClearBtn').addEventListener('click', () => { R.strokes = []; });
+$$('#drawBar [data-color]').forEach((b) => b.addEventListener('click', () => { S.penColor = b.dataset.color; save(); syncDrawBar(); }));
+$$('#drawBar [data-tool]').forEach((b) => b.addEventListener('click', () => { S.penTool = b.dataset.tool; save(); syncDrawBar(); }));
+drawHit.addEventListener('pointerdown', (e) => {
+  if (curStroke) return; drawHit.setPointerCapture(e.pointerId);
+  curStroke = { id: e.pointerId, tool: S.penTool, color: S.penColor, pts: [cpt(e)] }; R.strokes.push(curStroke);
+});
+drawHit.addEventListener('pointermove', (e) => {
+  if (!curStroke || e.pointerId !== curStroke.id) return; const p = cpt(e);
+  if (curStroke.tool === 'pen') curStroke.pts.push(p); else curStroke.pts[1] = p;
+});
+function drawUp(e) {
+  if (!curStroke || e.pointerId !== curStroke.id) return;
+  if (curStroke.pts.length < 2) R.strokes.pop(); // toque sem arrastar
+  curStroke = null;
+}
+drawHit.addEventListener('pointerup', drawUp); drawHit.addEventListener('pointercancel', drawUp);
+function drawStrokes() {
+  if (!R.strokes.length) return;
+  const lw = Math.min(cv.width, cv.height) * 0.013;
+  for (const st of R.strokes) {
+    const P = st.pts; if (P.length < 2) continue;
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = st.color; ctx.fillStyle = st.color; ctx.lineWidth = lw;
+    ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = lw * 0.8;
+    ctx.beginPath();
+    if (st.tool === 'pen') { ctx.moveTo(P[0][0], P[0][1]); for (let i = 1; i < P.length; i++) ctx.lineTo(P[i][0], P[i][1]); ctx.stroke(); }
+    else if (st.tool === 'circle') {
+      const [a, b] = P; ctx.ellipse((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, Math.abs(b[0] - a[0]) / 2 + 1, Math.abs(b[1] - a[1]) / 2 + 1, 0, 0, Math.PI * 2); ctx.stroke();
+    } else { // seta
+      const [a, b] = P, ang = Math.atan2(b[1] - a[1], b[0] - a[0]), hl = lw * 4.2;
+      ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0] - Math.cos(ang) * hl * 0.6, b[1] - Math.sin(ang) * hl * 0.6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(b[0], b[1]);
+      ctx.lineTo(b[0] - hl * Math.cos(ang - 0.45), b[1] - hl * Math.sin(ang - 0.45));
+      ctx.lineTo(b[0] - hl * Math.cos(ang + 0.45), b[1] - hl * Math.sin(ang + 0.45)); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+/* ================= REPLAY EM CÂMERA LENTA ================= */
+function setRate(r) { if (isYT()) { if (R.ytReady) try { R.yt.setPlaybackRate(r); } catch {} } else vid.playbackRate = r; }
+$('#replayBtn').addEventListener('click', () => {
+  if (!R.source) return;
+  const t = curTime(); R.replayEnd = t; seek(Math.max(0, t - 5)); setRate(0.5); R.bubble = '';
+  if (R.paused) playMedia();
+});
+function endReplay() { R.replayEnd = null; setRate(1); }
+function drawReplayTag(v) {
+  const fs = Math.round(Math.min(cv.width, cv.height) * 0.045);
+  ctx.save(); ctx.font = `900 ${fs}px -apple-system,Segoe UI,Roboto,sans-serif`;
+  const txt = '⟲ REPLAY  0.5x', tw = ctx.measureText(txt).width, pad = fs * 0.7, x = v.x + v.w - tw - pad * 2 - fs * 0.6, y = v.y + fs * 0.6;
+  ctx.fillStyle = 'rgba(0,0,0,.65)'; rrect(x, y, tw + pad * 2, fs * 1.9, fs * 0.4); ctx.fill();
+  ctx.fillStyle = '#ffd60a'; ctx.fillRect(x, y, fs * 0.25, fs * 1.9);
+  ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText(txt, x + pad, y + fs * 0.97); ctx.restore();
+}
+
+/* ================= ZOOM DRAMÁTICO ================= */
+function punchK() {
+  if (!R.punch) return 1;
+  const t = (performance.now() - R.punch) / 1000;
+  if (t > 1.5) { R.punch = 0; return 1; }
+  const inn = Math.min(1, t / 0.12), out = t > 1.15 ? Math.min(1, (t - 1.15) / 0.35) : 0;
+  const e = (x) => 1 - Math.pow(1 - x, 3);
+  return 1 + 0.65 * e(inn) * (1 - e(out));
+}
+$('#punchBtn').addEventListener('click', () => { R.punch = performance.now(); });
+function drawPunchFlash(L) {
+  if (!R.punch) return; const t = (performance.now() - R.punch) / 1000; if (t > 0.35) return;
+  const r = L.cam; ctx.save(); ctx.globalAlpha = 0.5 * (1 - t / 0.35); ctx.fillStyle = '#fff';
+  if (L.shape === 'circle') { ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, 0, Math.PI * 2); ctx.fill(); } else ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.restore();
+}
+
+/* ================= MARCA D'ÁGUA ================= */
+$('#wmText').addEventListener('input', (e) => { S.wmText = e.target.value.slice(0, 30); save(); });
+function drawWatermark() {
+  const t = (S.wmText || '').trim(); if (!S.wmOn || !t) return;
+  const W = cv.width, H = cv.height, fs = Math.round(Math.min(W, H) * 0.036);
+  ctx.save(); ctx.font = `800 ${fs}px -apple-system,Segoe UI,Roboto,sans-serif`;
+  const tw = ctx.measureText(t).width, pad = fs * 0.6, w = tw + pad * 2, h = fs * 1.7, x = W - w - fs * 0.7, y = H - h - fs * 0.7;
+  ctx.globalAlpha = 0.85; ctx.fillStyle = 'rgba(0,0,0,.55)'; rrect(x, y, w, h, h / 2); ctx.fill();
+  ctx.globalAlpha = 1; ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText(t, x + pad, y + h / 2 + 1); ctx.restore();
+}
+
+/* ================= CONTAGEM 3-2-1 ================= */
+let countingDown = false;
+function withCountdown(cb) {
+  if (!S.countdown) return cb();
+  countingDown = true; const el = $('#countdown'); let n = 3;
+  const step = () => {
+    if (n === 0) { el.classList.add('hidden'); countingDown = false; return cb(); }
+    el.textContent = n; el.classList.remove('hidden', 'tick'); void el.offsetWidth; el.classList.add('tick'); n--; setTimeout(step, 1000);
+  };
+  step();
+}
+// iPhone só deixa dar play sozinho depois se o vídeo for "destravado" num toque
+function unlockVideo() {
+  if (isYT() || !R.source || !R.paused) return;
+  ensureAudio(); R.unlocking = true;
+  vid.play().then(() => { vid.pause(); }).catch(() => {}).finally(() => setTimeout(() => { R.unlocking = false; }, 50));
+}
+
 /* ================= gravação ================= */
 let rec = null, chunks = [], recMime = '', lastBlob = null;
 $('#recBtn').addEventListener('click', () => {
   if (R.recording) return stopRec();
   if (isYT()) return openSheet('#ytRecSheet');
-  startRec();
+  if (countingDown) return;
+  unlockVideo();
+  withCountdown(() => { startRec(); if (R.source && R.paused) playMedia(); });
 });
-$('#goClean').addEventListener('click', () => { closeSheets(); document.body.classList.add('clean'); toast('Modo limpo: toque no ✕ no canto pra sair', 3000); });
+$('#goClean').addEventListener('click', () => { closeSheets(); document.body.classList.add('clean'); withCountdown(() => { if (R.paused) playMedia(); }); });
 $('#cleanExit').addEventListener('click', () => document.body.classList.remove('clean'));
 $('#recCamOnly').addEventListener('click', () => { closeSheets(); startRec(); });
 function startRec() {

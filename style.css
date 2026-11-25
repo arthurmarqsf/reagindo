@@ -154,3 +154,32 @@ body.adjusting .bottom{display:none}
 .dl{bottom:calc(var(--sb) + 30px)!important;left:28px}
 .emojis{scrollbar-width:none}.emojis::-webkit-scrollbar{display:none}
 #ytWrap{clip-path:inset(0);-webkit-clip-path:inset(0);isolation:isolate;transform:translateZ(0)}
+
+/* ---- replay / zoom dramático ---- */
+.pb-replay{height:34px;padding:0 10px;border-radius:999px;background:rgba(255,214,10,.18);color:#ffd60a;font-size:18px;font-weight:800;display:flex;align-items:center;gap:1px;flex:none}
+.pb-replay b{font-size:12px}
+.punch{position:absolute!important;right:28px;bottom:calc(var(--sb) + 30px)}
+.punch:active{background:#fff;color:#000;transform:scale(.92)}
+
+/* ---- desenhar ---- */
+#drawHit{position:absolute;inset:0;z-index:4;display:none;touch-action:none;cursor:crosshair}
+body.drawing #drawHit{display:block}
+body.drawing .bottom,body.drawing #camHit,body.drawing #splitPill,body.drawing #addMedia{display:none!important}
+.drawbar{position:fixed;left:50%;bottom:calc(var(--sb) + 14px);transform:translateX(-50%);z-index:6;display:none;flex-direction:column;gap:8px;align-items:center;
+  background:rgba(28,28,30,.92);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);padding:10px 12px;border-radius:22px;max-width:calc(100% - 20px)}
+body.drawing .drawbar{display:flex}
+.dcolors,.dtools{display:flex;gap:8px;align-items:center}
+.dcolors button{width:30px;height:30px;border-radius:50%;background:var(--c);border:3px solid transparent}
+.dcolors button.on{border-color:#fff;box-shadow:0 0 0 2px #000 inset}
+.dtools button{min-width:42px;height:40px;border-radius:12px;background:#2c2c2e;font-size:20px;font-weight:700}
+.dtools button.on{background:#ffd60a;color:#000}
+.dtools .ok{background:var(--red);font-size:15px;padding:0 12px}
+#tbDraw.on{color:#ffd60a}
+
+/* ---- contagem ---- */
+.countdown{position:absolute;inset:0;z-index:7;display:grid;place-items:center;font-size:160px;font-weight:900;color:#fff;
+  text-shadow:0 6px 30px rgba(0,0,0,.7);background:rgba(0,0,0,.25);pointer-events:none}
+.countdown.tick{animation:cd 1s ease-out}
+@keyframes cd{0%{transform:scale(1.6);opacity:0}25%{transform:scale(1);opacity:1}85%{opacity:1}100%{transform:scale(.8);opacity:0}}
+body.clean .countdown{background:none}
+input[type=text]{width:100%;background:#2c2c2e;border:1px solid #3a3a3c;border-radius:14px;color:#fff;padding:13px;font:inherit;font-size:16px}
