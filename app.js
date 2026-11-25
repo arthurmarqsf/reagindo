@@ -28,7 +28,7 @@ $('#scrim').addEventListener('click', closeSheets);
 $('#mediaBtn').addEventListener('click', () => openSheet('#mediaSheet'));
 $('#addMedia').addEventListener('click', () => openSheet('#mediaSheet'));
 $('#settingsBtn').addEventListener('click', () => openSheet('#settingsSheet'));
-$('#tbMoments').addEventListener('click', () => openSheet('#momentsSheet'));
+$('#openMoments').addEventListener('click', () => openSheet('#momentsSheet'));
 $('#balloonBtn').addEventListener('click', () => { if (!R.paused) pauseMedia(); openSheet('#balloonSheet'); setTimeout(() => $('#commentText').focus(), 300); });
 $('#tbReact').addEventListener('click', () => { const on = $('#emojiBar').classList.toggle('hidden'); $('#soundBar').classList.toggle('hidden', on); $('#tbReact').classList.toggle('on', !on); });
 $('#tbToggle').addEventListener('click', () => { S.tbCollapsed = !S.tbCollapsed; save(); applyUI(); });
@@ -648,8 +648,9 @@ function startRec() {
   chunks = []; rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); }; rec.onstop = finishRec; rec.start(1000);
   R.recording = true; R.recStart = performance.now(); $('#recBtn').classList.add('on');
   toast(R.source ? 'Gravando! Dê play e reaja 🎙️' : 'Gravando sua câmera');
+  if (window.prompterOnRec) prompterOnRec(true);
 }
-function stopRec() { if (rec && rec.state !== 'inactive') rec.stop(); R.recording = false; $('#recBtn').classList.remove('on'); }
+function stopRec() { if (rec && rec.state !== 'inactive') rec.stop(); R.recording = false; $('#recBtn').classList.remove('on'); if (window.prompterOnRec) prompterOnRec(false); }
 function finishRec() {
   const type = (rec && rec.mimeType) || recMime || 'video/mp4';
   lastBlob = new Blob(chunks, { type }); const url = URL.createObjectURL(lastBlob), ext = type.includes('mp4') ? 'mp4' : 'webm';

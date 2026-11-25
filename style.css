@@ -210,3 +210,15 @@ input[type=text]{width:100%;background:#2c2c2e;border:1px solid #3a3a3c;border-r
 .ed-progress{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:24px;pointer-events:auto}
 .ed-progress>div{background:#1c1c1e;border-radius:18px;padding:18px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;text-align:center}
 .ed-prog{height:8px;background:#3a3a3c;border-radius:4px;overflow:hidden}.ed-prog i{display:block;height:100%;width:0;background:var(--red);transition:width .2s}
+
+/* ---- teleprompter (fora do canvas: não grava) ---- */
+.prompter{position:fixed;left:10px;right:10px;top:calc(var(--st) + 64px);z-index:8;max-width:600px;margin:0 auto;background:rgba(0,0,0,.62);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+.p-scroll{position:absolute;inset:0 0 44px 0;overflow:hidden;touch-action:none;-webkit-mask-image:linear-gradient(transparent,#000 18%,#000 80%,transparent);mask-image:linear-gradient(transparent,#000 18%,#000 80%,transparent)}
+#pInner{padding:28% 18px 60%;font-weight:700;line-height:1.35;color:#fff;white-space:pre-wrap;will-change:transform;text-align:center}
+.p-guide{position:absolute;left:8px;right:8px;top:30%;height:2px;background:rgba(255,214,10,.55);pointer-events:none}
+.p-ctrl{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(0,0,0,.5)}
+.p-ctrl button{min-width:34px;height:32px;border-radius:9px;background:rgba(255,255,255,.12);font-size:15px;font-weight:700}
+.p-ctrl span{font-size:12px;color:#ddd;min-width:34px;text-align:center;font-variant-numeric:tabular-nums}
+#tbPrompter.on{color:#ffd60a}
+body.clean .prompter{display:none}
