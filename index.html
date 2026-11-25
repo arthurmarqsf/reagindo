@@ -122,6 +122,9 @@
     <button id="ytGo" class="sbtn">Usar</button>
   </div>
   <p class="hint">Com link do YouTube, grave pela <b>Gravação de Tela</b> do iPhone (o YouTube bloqueia a gravação por dentro do app). Vídeo de TikTok/Insta: baixe e escolha em “Vídeo do celular”.</p>
+  <div class="sep">editar um vídeo já gravado</div>
+  <label class="sbtn" for="edFile">✂️ Abrir vídeo no editor</label>
+  <input id="edFile" type="file" accept="video/*" hidden>
   <button id="clearMedia" class="sbtn ghost">Remover mídia</button>
 </div>
 
@@ -199,10 +202,58 @@
     <video id="resultVid" controls playsinline></video>
     <button id="saveBtn" class="sbtn primary">📲 Salvar no app Fotos</button>
     <p class="hint" style="text-align:center">Na tela que abrir, toque em <b>“Salvar Vídeo”</b>. Ele vai direto pro rolo da câmera.</p>
+    <button id="editBtn" class="sbtn">✂️ Editar (cortar, capa, música)</button>
     <a id="dlBtn" class="sbtn" download>Baixar arquivo</a>
     <button id="closeResult" class="sbtn ghost">Fechar</button>
   </div>
 </div>
+
+<!-- ============ EDITOR ============ -->
+<section id="editor" class="editor hidden">
+  <div class="ed-top">
+    <button id="edClose" class="sbtn ghost">✕ Fechar</button>
+    <b>Editor</b>
+    <button id="edExport" class="sbtn primary">Exportar</button>
+  </div>
+  <div class="ed-view"><video id="edVid" playsinline webkit-playsinline preload="auto"></video></div>
+  <div class="ed-time" id="edTime">0:00.0</div>
+  <div class="ed-bar" id="edBar"><div id="edSegs"></div><div class="ed-head" id="edHead"></div></div>
+  <div class="ed-ctrl">
+    <button id="edBack" class="round">−½s</button>
+    <button id="edPlay" class="ed-play">▶</button>
+    <button id="edFwd" class="round">+½s</button>
+  </div>
+  <div class="ed-tabs" id="edTabs">
+    <button data-tab="cut">✂️ Cortar</button><button data-tab="cover">🖼️ Capa</button><button data-tab="music">🎵 Música</button>
+  </div>
+  <div class="edpane" data-pane="cut">
+    <div class="row">
+      <button id="edSetStart" class="sbtn">⇤ Começa aqui <small id="edStartLbl"></small></button>
+      <button id="edSetEnd" class="sbtn">Termina aqui ⇥ <small id="edEndLbl"></small></button>
+    </div>
+    <button id="edCutBtn" class="sbtn">✂ Começar corte aqui</button>
+    <ol id="edCuts" class="ed-cuts"></ol>
+    <p class="hint">Arraste na barra pra achar o ponto. Vermelho = trecho que sai do vídeo.</p>
+  </div>
+  <div class="edpane hidden" data-pane="cover">
+    <button id="edCoverGrab" class="sbtn primary">📸 Usar o frame atual como capa</button>
+    <input id="edTitle" type="text" maxlength="60" placeholder="Título da capa (ex.: NÃO ACREDITO NESSE GOL)">
+    <img id="edCoverPrev" class="ed-cover hidden" alt="Prévia da capa">
+    <label class="set tog"><span>Colocar a capa no início do vídeo (1 s)</span><input id="edCoverIn" type="checkbox" checked></label>
+    <button id="edCoverSave" class="sbtn">Salvar capa como foto</button>
+  </div>
+  <div class="edpane hidden" data-pane="music">
+    <label class="sbtn" for="edMusicFile">🎵 Escolher música do celular</label>
+    <input id="edMusicFile" type="file" accept="audio/*,video/*" hidden>
+    <div class="set"><span id="edMusicName">Nenhuma música</span><button id="edMusicDel" class="sbtn ghost hidden">Remover</button></div>
+    <div class="set"><span>Volume da música</span><input id="edMusicVol" type="range" min="0" max="1" step="0.05" value="0.25"></div>
+    <label class="set tog"><span>Abaixar música quando tiver voz</span><input id="edDuck" type="checkbox" checked></label>
+  </div>
+  <div id="edProgress" class="ed-progress hidden">
+    <div><b id="edProgTxt">Exportando… 0%</b><div class="ed-prog"><i id="edProgBar"></i></div>
+    <p class="hint">Deixe o app aberto. O vídeo toca enquanto exporta.</p></div>
+  </div>
+</section>
 
 <div id="toast" class="toast"></div>
 
@@ -210,5 +261,6 @@
 <video id="cam" playsinline webkit-playsinline muted autoplay></video>
 
 <script src="app.js"></script>
+<script src="editor.js"></script>
 </body>
 </html>
