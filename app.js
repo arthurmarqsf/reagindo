@@ -687,12 +687,21 @@ function startRec() {
   if (window.prompterOnRec) prompterOnRec(true);
 }
 function stopRec() { if (rec && rec.state !== 'inactive') rec.stop(); R.recording = false; $('#recBtn').classList.remove('on'); if (window.prompterOnRec) prompterOnRec(false); }
-function finishRec() {
+async function finishRec() {
   const type = (rec && rec.mimeType) || recMime || 'video/mp4';
-  lastBlob = new Blob(chunks, { type }); const url = URL.createObjectURL(lastBlob), ext = type.includes('mp4') ? 'mp4' : 'webm';
-  $('#resultVid').src = url; $('#dlBtn').href = url; $('#dlBtn').download = 'react-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.' + ext;
+  const raw = new Blob(chunks, { type });
   $('#lastBtn').classList.remove('hidden'); $('#result').classList.remove('hidden');
+  lastBlob = await prepareForPhotos(raw);
   if (window.saveHistory) saveHistory(lastBlob, 'React ' + (R.source && R.source.name ? '· ' + R.source.name.replace(/\.[^.]+$/, '').slice(0, 24) : ''));
+}
+// converte pro MP4 padrão (o iPhone só mostra "Salvar Vídeo" pra esse formato) e prepara a tela de resultado
+async function prepareForPhotos(blob) {
+  const btn = $('#saveBtn'); btn.disabled = true; btn.textContent = '⏳ Preparando pro app Fotos…';
+  const out = window.fixMp4 ? await fixMp4(blob) : blob;
+  const url = URL.createObjectURL(out), ext = (out.type || '').includes('webm') ? 'webm' : 'mp4';
+  $('#resultVid').src = url; $('#dlBtn').href = url; $('#dlBtn').download = 'react-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.' + ext;
+  btn.disabled = false; btn.textContent = '📲 Salvar no app Fotos';
+  return out;
 }
 $('#lastBtn').addEventListener('click', () => $('#result').classList.remove('hidden'));
 $('#saveBtn').addEventListener('click', async () => {

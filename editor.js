@@ -211,9 +211,8 @@ async function exportEdit() {
     if (rec.state === 'paused') rec.resume();
     const stopped = waitEv(rec, 'stop'); rec.stop(); await stopped;
     const type = rec.mimeType || mime || 'video/mp4';
-    lastBlob = new Blob(chunks, { type });
-    const url = URL.createObjectURL(lastBlob), ext = type.includes('mp4') ? 'mp4' : 'webm';
-    $('#resultVid').src = url; $('#dlBtn').href = url; $('#dlBtn').download = 'react-editado-' + Date.now() + '.' + ext;
+    $('#edProgTxt').textContent = 'Preparando pro app Fotos…';
+    lastBlob = await prepareForPhotos(new Blob(chunks, { type }));
     $('#editor').classList.add('hidden'); $('#result').classList.remove('hidden'); $('#lastBtn').classList.remove('hidden');
     toast('Vídeo editado pronto ✅'); if (window.saveHistory) saveHistory(lastBlob, 'Editado' + (E.title ? ' · ' + E.title.slice(0, 24) : ''));
   } catch (e) { console.warn(e); toast('Erro ao exportar: ' + e.message, 4000); try { rec.state !== 'inactive' && rec.stop(); } catch {} }
