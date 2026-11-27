@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0e0b18">
+<title>Controle React Thurzão</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="../estudio/icon-192.png">
+<style>
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { margin:0; height:100%; background:#0e0b18; color:#f4f4f5; font-family:Roboto,"Segoe UI",Arial,sans-serif; user-select:none; }
+body { padding:14px 16px; overflow:auto; }
+.top { display:flex; align-items:center; gap:10px; }
+.top b { font-size:19px; letter-spacing:.08em; }
+.st { font-size:12px; padding:5px 10px; border-radius:999px; background:#3f1d1d; color:#fca5a5; }
+.st.on { background:#14532d; color:#bbf7d0; }
+h2 { font-size:12px; letter-spacing:.2em; color:#a78bfa; margin:14px 2px 9px; font-weight:800; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:10px; }
+button { border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:16px 8px 13px; background:linear-gradient(160deg,#1c1530,#140f22);
+  color:#fff; font:700 16px Roboto,"Segoe UI",sans-serif; text-align:center; touch-action:manipulation; transition:transform .06s; }
+button:active { transform:scale(.93); }
+button .e { display:block; font-size:34px; margin-bottom:4px; }
+button.ativo { border-color:#ec4899; background:linear-gradient(160deg,#4c1d95,#831843); box-shadow:0 0 18px rgba(236,72,153,.45); }
+button.tocando { border-color:#22d3ee; box-shadow:0 0 18px rgba(34,211,238,.6); }
+.rec { display:flex; gap:10px; } .rec button { flex:1; font-size:18px; padding:18px 8px; }
+.tempo { font:800 24px Roboto,sans-serif; min-width:120px; display:flex; align-items:center; justify-content:center; border-radius:14px; background:#18181b; color:#71717a; }
+.tempo.on { color:#fff; background:#be123c; }
+#bRec.gravando { background:linear-gradient(160deg,#991b1b,#7f1d1d); border-color:#ef4444; }
+#bLive.nolive { background:linear-gradient(160deg,#991b1b,#be123c); border-color:#f43f5e; box-shadow:0 0 22px rgba(244,63,94,.55); }
+#bMic.mudo { background:#27272a; border-color:#ef4444; color:#fca5a5; }
+.prev { position:relative; margin-top:12px; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,.12); background:#000; aspect-ratio:16/9; }
+.prev img { width:100%; height:100%; object-fit:contain; display:block; }
+.prev .tag { position:absolute; left:10px; bottom:10px; font:700 13px Roboto,sans-serif; padding:5px 10px; border-radius:999px; background:rgba(0,0,0,.65); }
+.prev .vivo { position:absolute; right:10px; top:10px; font:800 13px Roboto,sans-serif; letter-spacing:.1em; padding:5px 10px; border-radius:999px; background:#be123c; display:none; }
+.prev.on .vivo { display:block; }
+.mini { padding:8px 12px; font-size:13px; border-radius:12px; }
+.dica { font-size:12px; color:#a1a1aa; margin-top:8px; line-height:1.4; }
+.chave { position:fixed; inset:0; background:#0e0b18; display:none; align-items:center; justify-content:center; text-align:center; padding:30px; font-size:18px; line-height:1.5; }
+@media (min-width: 820px) { .cols { display:grid; grid-template-columns:minmax(360px,41%) 1fr; gap:20px; align-items:start; } .colA { position:sticky; top:0; } }
+</style></head>
+<body>
+<div class="top"><b>🎛 CONTROLE</b><span id="st" class="st">conectando…</span><span style="flex:1"></span>
+  <button id="bPrev" class="mini">👁 Prévia</button><button id="bFull" class="mini">⛶ Tela cheia</button></div>
+<div class="cols"><div class="colA">
+  <div class="prev" id="prev"><img id="pimg" alt=""><span class="tag" id="pcena">—</span><span class="vivo">● AO VIVO</span></div>
+  <h2>LIVE</h2>
+  <div class="rec"><button id="bLive">🔴 INICIAR LIVE</button><div class="tempo" id="tLive">OFF</div></div>
+  <div class="dica" id="saude">—</div>
+  <h2>GRAVAÇÃO</h2>
+  <div class="rec"><button id="bRec">⏺ GRAVAR</button><button id="bPause">⏸ PAUSAR</button><div class="tempo" id="tRec">00:00:00</div></div>
+  <h2>MICROFONE</h2>
+  <div class="rec"><button id="bMic">🎙 MIC LIGADO</button></div>
+</div><div class="colB">
+  <h2>CÂMERA</h2><div class="grid" id="cams"></div>
+  <h2>TELAS DA LIVE</h2><div class="grid" id="telas"></div>
+  <h2>SONS</h2><div class="grid" id="sons"></div>
+  <h2>EXTRAS</h2>
+  <div class="grid"><button id="bPop"><span class="e">🔔</span>Inscreva-se</button><button id="bStop"><span class="e">🔇</span>Parar sons</button></div>
+  <p class="dica">Controla o OBS do PC pela internet. O OBS precisa estar aberto pelo atalho <b>OBS React Thurzão</b>.</p>
+</div></div>
+<div class="chave" id="semChave">🔑 Abra este controle pelo link com a chave<br>(o link que termina com <b>#k=…</b>).</div>
+<video id="acordado" src="acordado.mp4" muted loop playsinline style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none"></video>
+
+<script src="mqttmini.js"></script>
+<script src="publico.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+// chave: vem do link (#k=...) e fica guardada no tablet
+const hk = (location.hash.match(/k=([A-Za-z0-9]+)/) || [])[1];
+if (hk) { localStorage.setItem('chave', hk); history.replaceState(null, '', location.pathname); }
+const CHAVE = localStorage.getItem('chave');
+if (!CHAVE) $('semChave').style.display = 'flex';
+const base = 'thz/' + CHAVE + '/';
+
+let estado = {}, ultimoEstado = 0, prevOn = localStorage.getItem('prevOn') !== '0';
+const clientes = [];
+function msg(t, txt) {
+  if (t === base + 'st') { try { const e = JSON.parse(txt); if (e.ts >= (estado.ts || 0)) { estado = e; ultimoEstado = Date.now(); render(); } } catch (x) {} }
+  else if (t === base + 'img') { $('pimg').src = txt; }
+  else if (t === base + 'ev') { try { const e = JSON.parse(txt); const b = document.querySelector(`[data-som="${CSS.escape(e.tocando)}"]`); if (b) b.classList.toggle('tocando', e.on); } catch (x) {} }
+}
+if (CHAVE) RELAY_BROKERS.forEach((u, i) => { const c = new MQTTMini(u, 'tab-' + i + '-' + Math.random().toString(36).slice(2, 8), msg, () => {}); ['st', 'img', 'ev'].forEach(s => c.sub(base + s)); clientes.push(c); });
+// envia o comando por TODOS os servidores conectados (o PC ignora repetidos pelo id)
+function cmd(o) { o.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); const t = JSON.stringify(o); clientes.forEach(c => c.pub(base + 'cmd', t, false)); }
+setInterval(() => cmd({ a: 'hb', prev: prevOn }), 4000);
+setTimeout(() => cmd({ a: 'hb', prev: prevOn }), 1500);
+
+function render() {
+  const ok = Date.now() - ultimoEstado < 20000 && clientes.some(c => c.ok);
+  $('st').textContent = ok ? 'OBS conectado' : (clientes.some(c => c.ok) ? 'esperando o OBS…' : 'sem internet');
+  $('st').className = 'st' + (ok ? ' on' : '');
+  document.querySelectorAll('[data-cena]').forEach(b => b.classList.toggle('ativo', b.dataset.cena === estado.cena));
+  const c = PUBLICO.cenas.find(x => x.cena === estado.cena); $('pcena').textContent = c ? c.emoji + ' ' + c.rotulo : (estado.cena || '—');
+  $('bRec').classList.toggle('gravando', !!estado.rec); $('bRec').textContent = estado.rec ? '⏹ PARAR' : '⏺ GRAVAR';
+  $('bPause').textContent = estado.pausa ? '▶ CONTINUAR' : '⏸ PAUSAR'; $('tRec').textContent = estado.recT || '00:00:00';
+  $('bLive').classList.toggle('nolive', !!estado.live); if (!armado) $('bLive').textContent = estado.live ? '⏹ ENCERRAR LIVE' : '🔴 INICIAR LIVE';
+  $('tLive').textContent = estado.live ? estado.liveT : 'OFF'; $('tLive').classList.toggle('on', !!estado.live); $('prev').classList.toggle('on', !!estado.live);
+  $('saude').innerHTML = estado.live ? `<span style="color:${estado.cong > 30 || estado.perd > 2 ? '#f87171' : estado.cong > 10 ? '#fbbf24' : '#4ade80'}">● Conexão ${estado.cong > 30 ? 'ruim' : estado.cong > 10 ? 'instável' : 'ótima'}</span> · congestionamento ${estado.cong}% · perdidos ${estado.perd}%` : 'Fora do ar';
+  $('bMic').classList.toggle('mudo', !!estado.mic); $('bMic').textContent = estado.mic ? '🔇 MIC MUTADO' : '🎙 MIC LIGADO';
+}
+setInterval(render, 1000);
+
+PUBLICO.cenas.forEach(c => { const b = document.createElement('button'); b.dataset.cena = c.cena; b.innerHTML = `<span class="e">${c.emoji}</span>${c.rotulo}`;
+  b.onclick = () => { cmd({ a: 'cena', v: c.cena }); estado.cena = c.cena; render(); }; $(c.grupo === 'live' ? 'telas' : 'cams').appendChild(b); });
+PUBLICO.sons.forEach(s => { const b = document.createElement('button'); b.dataset.som = s.fonte; b.innerHTML = `<span class="e">${s.emoji}</span>${s.rotulo}`;
+  b.onclick = () => cmd({ a: 'som', v: s.fonte }); $('sons').appendChild(b); });
+$('bPop').onclick = () => cmd({ a: 'pop' });
+$('bStop').onclick = () => cmd({ a: 'parar' });
+$('bRec').onclick = () => cmd({ a: 'rec' });
+$('bPause').onclick = () => cmd({ a: 'pause' });
+$('bMic').onclick = () => cmd({ a: 'mic' });
+let armado = 0;
+$('bLive').onclick = () => {
+  if (Date.now() - armado > 3000) { armado = Date.now(); $('bLive').textContent = estado.live ? 'toque de novo p/ ENCERRAR' : 'toque de novo p/ ENTRAR AO VIVO';
+    setTimeout(() => { armado = 0; render(); }, 3000); return; }
+  armado = 0; cmd({ a: 'live' });
+};
+const marcarPrev = () => { $('bPrev').classList.toggle('ativo', prevOn); $('prev').style.display = prevOn ? '' : 'none'; };
+$('bPrev').onclick = () => { prevOn = !prevOn; localStorage.setItem('prevOn', prevOn ? '1' : '0'); marcarPrev(); cmd({ a: 'hb', prev: prevOn }); };
+marcarPrev();
+$('bFull').onclick = () => { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}); };
+document.addEventListener('pointerdown', () => { $('acordado').play().catch(() => {}); if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(() => {}); }, { once: true });
+</script>
+</body></html>
