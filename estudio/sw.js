@@ -1,4 +1,4 @@
-﻿// Cache offline do app (os sons e vÃ­deos ficam no prÃ³prio tablet, nÃ£o aqui).
+﻿// Cache offline do app (os sons e vídeos ficam no próprio tablet, não aqui).
 const CACHE = 'react-v3';
 const FILES = ['./', './index.html', './app.js?v=3', './manifest.json', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
