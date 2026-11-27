@@ -1,10 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0e0b18">
-<title>React Thurzão</title>
+<title>React ThurzÃ£o</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <style>
@@ -48,11 +48,11 @@ input[type=file] { display:none; }
   <div class="stage">
     <div class="tela">
       <canvas id="cv" width="1920" height="1080"></canvas>
-      <div class="vazio" id="vazio"><b>⚽ React Thurzão</b>1) Toque em <b style="font-size:15px">Abrir vídeo</b> e escolha o lance<br>2) Ligue a câmera e mande ver no <b style="font-size:15px">GRAVAR</b></div>
+      <div class="vazio" id="vazio"><b>âš½ React ThurzÃ£o</b>1) Toque em <b style="font-size:15px">Abrir vÃ­deo</b> e escolha o lance<br>2) Ligue a cÃ¢mera e mande ver no <b style="font-size:15px">GRAVAR</b></div>
       <div class="recbadge" id="recbadge"><i></i><span id="rtime">00:00</span></div>
     </div>
     <div class="player">
-      <button id="bPlay" style="width:56px">▶</button>
+      <button id="bPlay" style="width:56px">â–¶</button>
       <button id="bBack" style="width:56px">-5s</button>
       <button id="bFwd" style="width:56px">+5s</button>
       <input type="range" id="seek" min="0" max="1000" value="0">
@@ -61,18 +61,18 @@ input[type=file] { display:none; }
   </div>
 
   <div class="painel">
-    <button id="bRec">⏺ GRAVAR</button>
+    <button id="bRec">âº GRAVAR</button>
     <div class="meter"><i id="meter"></i></div>
-    <div class="status" id="status">Câmera desligada.</div>
+    <div class="status" id="status">CÃ¢mera desligada.</div>
 
-    <h2>VÍDEO E CÂMERA</h2>
+    <h2>VÃDEO E CÃ‚MERA</h2>
     <div class="g2">
-      <label class="btn" for="fVideo"><span class="e" style="display:block;font-size:24px">🎬</span>Abrir vídeo</label>
-      <button id="bCam"><span class="e">📷</span>Ligar câmera</button>
+      <label class="btn" for="fVideo"><span class="e" style="display:block;font-size:24px">ðŸŽ¬</span>Abrir vÃ­deo</label>
+      <button id="bCam"><span class="e">ðŸ“·</span>Ligar cÃ¢mera</button>
     </div>
     <input type="file" id="fVideo" accept="video/*">
 
-    <h2>CÂMERA NA TELA</h2>
+    <h2>CÃ‚MERA NA TELA</h2>
     <div class="g2" id="layouts"></div>
 
     <h2>SONS</h2>
@@ -81,28 +81,28 @@ input[type=file] { display:none; }
 
     <h2>EXTRAS</h2>
     <div class="g2">
-      <button id="bPop"><span class="e">🔔</span>Inscreva-se</button>
-      <label class="btn" for="fSons"><span class="e" style="display:block;font-size:24px">📂</span>Importar sons</label>
+      <button id="bPop"><span class="e">ðŸ””</span>Inscreva-se</button>
+      <label class="btn" for="fSons"><span class="e" style="display:block;font-size:24px">ðŸ“‚</span>Importar sons</label>
     </div>
     <input type="file" id="fSons" accept="audio/*,.mp3" multiple>
 
     <h2>AJUSTES</h2>
     <label class="chk"><input type="checkbox" id="cFone" checked> Estou de fone (som mais limpo)</label>
-    <label class="chk"><input type="checkbox" id="cEspelho"> Espelhar câmera</label>
-    <label class="chk"><input type="checkbox" id="cDuck" checked> Abaixar o vídeo quando eu falo</label>
+    <label class="chk"><input type="checkbox" id="cEspelho"> Espelhar cÃ¢mera</label>
+    <label class="chk"><input type="checkbox" id="cDuck" checked> Abaixar o vÃ­deo quando eu falo</label>
     <div class="linha" style="margin-top:6px">
       <select id="sQual"><option value="1080">Qualidade: 1080p (melhor)</option><option value="720">Qualidade: 720p (mais leve)</option></select>
     </div>
     <div class="linha" style="margin-top:8px">
-      <span style="font-size:13px;color:#a1a1aa;flex:0 0 auto">Volume do vídeo</span>
+      <span style="font-size:13px;color:#a1a1aa;flex:0 0 auto">Volume do vÃ­deo</span>
       <input type="range" id="vVol" min="0" max="100" value="80" style="accent-color:#a78bfa">
     </div>
-    <div class="status">Os vídeos vão para a pasta <b>Download</b> do tablet.</div>
+    <div class="status">Os vÃ­deos vÃ£o para a pasta <b>Download</b> do tablet.</div>
   </div>
 </div>
 <video id="vid" playsinline preload="auto" style="display:none"></video>
 <video id="cam" playsinline muted autoplay style="display:none"></video>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=3"></script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>

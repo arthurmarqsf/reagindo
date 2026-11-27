@@ -22,7 +22,7 @@
     ['01-gol-torcida', 'GOL!', '⚽'], ['02-torcida-explode', 'Torcida', '🏟️'], ['03-apito', 'Apito', '📣'],
     ['04-vaia-assobio', 'Vaia', '👎'], ['05-risada', 'Risada', '😂'], ['06-errou-buzina', 'Errou!', '❌'],
     ['07-trombone-triste', 'Trombone', '🎺'], ['08-impacto', 'Impacto', '💥'], ['09-suspense-coracao', 'Suspense', '💓'],
-    ['10-aplausos', 'Aplausos', '👏']
+    ['10-aplausos', 'Aplausos', '👏'], ['11-siiiu-cr7', 'SIIIU', '🐐']
   ];
 
   const st = {
@@ -91,7 +91,7 @@
     const all = await idbAll(); audio();
     for (const [k, ab] of Object.entries(all)) { try { st.buffers[k] = await ctx.decodeAudioData(ab.slice(0)); } catch (e) {} }
     const n = SONS.filter(s => st.buffers[s[0]]).length;
-    $('sonsInfo').textContent = n ? `${n} de 10 sons carregados${st.buffers.whoosh ? ' + whoosh' : ''}.` : 'Toque em "Importar sons" e escolha os MP3 da pasta Download/ReactSons.';
+    $('sonsInfo').textContent = n ? `${n} de ${SONS.length} sons carregados${st.buffers.whoosh ? ' + whoosh' : ''}.` : 'Toque em "Importar sons" e escolha os MP3 da pasta Download/ReactSons.';
     document.querySelectorAll('[data-som]').forEach(b => b.disabled = !st.buffers[b.dataset.som]);
   }
   $('fSons').onchange = async e => {
