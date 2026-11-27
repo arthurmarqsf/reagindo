@@ -50,6 +50,8 @@ button.tocando { border-color:#22d3ee; box-shadow:0 0 18px rgba(34,211,238,.6); 
   <h2>MICROFONE</h2>
   <div class="rec"><button id="bMic">🎙 MIC LIGADO</button></div>
 </div><div class="colB">
+  <h2>VÍDEO</h2>
+  <div class="rec"><button id="vBack">⏪ 10s</button><button id="vPlay">⏯ PAUSAR / TOCAR</button><button id="vFwd">10s ⏩</button></div>
   <h2>CÂMERA</h2><div class="grid" id="cams"></div>
   <h2>TELAS DA LIVE</h2><div class="grid" id="telas"></div>
   <h2>SONS</h2><div class="grid" id="sons"></div>
@@ -104,6 +106,9 @@ PUBLICO.cenas.forEach(c => { const b = document.createElement('button'); b.datas
 PUBLICO.sons.forEach(s => { const b = document.createElement('button'); b.dataset.som = s.fonte; b.innerHTML = `<span class="e">${s.emoji}</span>${s.rotulo}`;
   b.onclick = () => cmd({ a: 'som', v: s.fonte }); $('sons').appendChild(b); });
 $('bPop').onclick = () => cmd({ a: 'pop' });
+$('vPlay').onclick = () => cmd({ a: 'video', v: 'playpause' });
+$('vBack').onclick = () => cmd({ a: 'video', v: 'tras' });
+$('vFwd').onclick = () => cmd({ a: 'video', v: 'frente' });
 $('bStop').onclick = () => cmd({ a: 'parar' });
 $('bRec').onclick = () => cmd({ a: 'rec' });
 $('bPause').onclick = () => cmd({ a: 'pause' });
