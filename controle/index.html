@@ -39,6 +39,7 @@ button.tocando { border-color:#22d3ee; box-shadow:0 0 18px rgba(34,211,238,.6); 
 </style></head>
 <body>
 <div class="top"><b>🎛 CONTROLE</b><span id="st" class="st">conectando…</span><span style="flex:1"></span>
+  <button id="bInst" class="mini" style="display:none">📲 Instalar app</button>
   <button id="bPrev" class="mini">👁 Prévia</button><button id="bFull" class="mini">⛶ Tela cheia</button></div>
 <div class="cols"><div class="colA">
   <div class="prev" id="prev"><img id="pimg" alt=""><span class="tag" id="pcena">—</span><span class="vivo">● AO VIVO</span></div>
@@ -55,6 +56,7 @@ button.tocando { border-color:#22d3ee; box-shadow:0 0 18px rgba(34,211,238,.6); 
   <h2>CÂMERA</h2><div class="grid" id="cams"></div>
   <h2>TELAS DA LIVE</h2><div class="grid" id="telas"></div>
   <h2>SONS</h2><div class="grid" id="sons"></div>
+  <h2>MEMES</h2><div class="grid" id="memes"></div>
   <h2>EXTRAS</h2>
   <div class="grid"><button id="bPop"><span class="e">🔔</span>Inscreva-se</button><button id="bStop"><span class="e">🔇</span>Parar sons</button></div>
   <p class="dica">Controla o OBS do PC pela internet. O OBS precisa estar aberto pelo atalho <b>OBS React Thurzão</b>.</p>
@@ -104,7 +106,7 @@ setInterval(render, 1000);
 PUBLICO.cenas.forEach(c => { const b = document.createElement('button'); b.dataset.cena = c.cena; b.innerHTML = `<span class="e">${c.emoji}</span>${c.rotulo}`;
   b.onclick = () => { cmd({ a: 'cena', v: c.cena }); estado.cena = c.cena; render(); }; $(c.grupo === 'live' ? 'telas' : 'cams').appendChild(b); });
 PUBLICO.sons.forEach(s => { const b = document.createElement('button'); b.dataset.som = s.fonte; b.innerHTML = `<span class="e">${s.emoji}</span>${s.rotulo}`;
-  b.onclick = () => cmd({ a: 'som', v: s.fonte }); $('sons').appendChild(b); });
+  b.onclick = () => cmd({ a: 'som', v: s.fonte }); $(s.grupo === 'meme' ? 'memes' : 'sons').appendChild(b); });
 $('bPop').onclick = () => cmd({ a: 'pop' });
 $('vPlay').onclick = () => cmd({ a: 'video', v: 'playpause' });
 $('vBack').onclick = () => cmd({ a: 'video', v: 'tras' });
@@ -123,6 +125,11 @@ const marcarPrev = () => { $('bPrev').classList.toggle('ativo', prevOn); $('prev
 $('bPrev').onclick = () => { prevOn = !prevOn; localStorage.setItem('prevOn', prevOn ? '1' : '0'); marcarPrev(); cmd({ a: 'hb', prev: prevOn }); };
 marcarPrev();
 $('bFull').onclick = () => { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}); };
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+// botao "Instalar app" (Android/Chrome)
+let pedidoInstalar = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedidoInstalar = e; $('bInst').style.display = ''; });
+$('bInst').onclick = async () => { if (!pedidoInstalar) return; pedidoInstalar.prompt(); await pedidoInstalar.userChoice; pedidoInstalar = null; $('bInst').style.display = 'none'; };
 document.addEventListener('pointerdown', () => { $('acordado').play().catch(() => {}); if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(() => {}); }, { once: true });
 </script>
 </body></html>
